@@ -102,3 +102,65 @@ def test_multiple_descriptor_fields_work_independently() -> None:
     assert model.note == 'Detailed'
     assert model._title == 'Task'
     assert model._note == 'Detailed'
+
+
+def test_string_init_with_non_int_min_len_raises_type_error() -> None:
+    string_descriptor = getattr(
+        __import__('domain.descriptor', fromlist=['String']), 'String'
+    )
+
+    with pytest.raises(TypeError):
+        string_descriptor(min_len='1')
+
+
+def test_string_init_with_non_int_max_len_raises_type_error() -> None:
+    string_descriptor = getattr(
+        __import__('domain.descriptor', fromlist=['String']), 'String'
+    )
+
+    with pytest.raises(TypeError):
+        string_descriptor(min_len=1, max_len='10')
+
+
+def test_string_init_with_min_len_greater_than_max_len_raises_value_error() -> None:
+    with pytest.raises(ValueError):
+        String(min_len=5, max_len=3)
+
+
+def test_string_init_with_valid_params_succeeds() -> None:
+    descriptor = String(min_len=2, max_len=4)
+
+    assert descriptor._min_len == 2
+    assert descriptor._max_len == 4
+
+
+def test_string_init_with_none_max_len_succeeds() -> None:
+    descriptor = String(min_len=2, max_len=None)
+
+    assert descriptor._min_len == 2
+    assert descriptor._max_len is None
+
+
+def test_accessing_uninitialized_string_descriptor_from_instance_raises_attribute_error() -> (
+    None
+):
+    model = DummyModel()
+
+    with pytest.raises(AttributeError):
+        _ = model.name
+
+
+def test_uninitialized_string_descriptor_error_mentions_public_field_name() -> None:
+    model = DummyModel()
+
+    with pytest.raises(AttributeError, match=r'\bname\b'):
+        _ = model.name
+
+
+def test_uninitialized_string_descriptor_error_does_not_expose_backing_private_name() -> (
+    None
+):
+    model = DummyModel()
+
+    with pytest.raises(AttributeError, match=r'^(?!.*_name).*name.*$'):
+        _ = model.name
