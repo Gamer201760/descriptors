@@ -10,6 +10,30 @@ class Task:
     description = String(min_len=1)
     priority = Int(min_value=1)
 
+    @classmethod
+    def from_json(cls, obj: object) -> 'Task':
+        if not isinstance(obj, dict):
+            raise TypeError(
+                f'Task.from_json ожидает dict, получено: {type(obj).__name__}'
+            )
+
+        required_fields = ('id', 'description', 'priority')
+        missing_fields = [field for field in required_fields if field not in obj]
+        if missing_fields:
+            raise ValueError(
+                'Отсутствуют обязательные поля задачи: ' + ', '.join(missing_fields)
+            )
+
+        kwargs = {
+            'id': obj['id'],
+            'description': obj['description'],
+            'priority': obj['priority'],
+        }
+        if 'status' in obj:
+            kwargs['status'] = obj['status']
+
+        return cls(**kwargs)
+
     def __init__(
         self,
         id: str | UUID,
