@@ -12,3 +12,15 @@ class StringValidationError(ValidationError):
 
 class IntValidationError(ValidationError):
     """Ошибка валидации числового атрибута"""
+
+
+class TaskIdValidationError(ValidationError):
+    """Ошибка валидации идентификатора задачи"""
+
+
+class TaskStatusValidationError(ValidationError):
+    """Ошибка валидации статуса задачи"""
+
+
+class TaskStatusTransitionError(TaskError):
+    """Ошибка недопустимого перехода статуса задачи"""
