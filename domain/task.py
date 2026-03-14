@@ -1,32 +1,79 @@
-from dataclasses import dataclass
+from datetime import datetime, timezone
+from uuid import UUID
+
+from domain.descriptor import Int, String
+from domain.error import TaskIdValidationError, TaskStatusValidationError
+from domain.task_status import TaskStatus
 
 
-@dataclass
 class Task:
-    id: int
-    payload: dict
+    description = String(min_len=1)
+    priority = Int(min_value=1)
 
-    # Фабрика из сырого JSON объекта с валидацией
-    @classmethod
-    def from_json(cls, obj: object) -> 'Task':
-        if not isinstance(obj, dict):
-            raise TypeError(f'Task JSON must be an object, got {type(obj).__name__}')
+    def __init__(
+        self,
+        id: str | UUID,
+        description: str,
+        priority: int,
+        status: TaskStatus | str = TaskStatus.NEW,
+        created_at: datetime | None = None,
+    ) -> None:
+        self._id = self._normalize_id(id)
+        self.description = description
+        self.priority = priority
+        self.status = status
+        self._created_at = self._normalize_created_at(created_at)
 
-        if 'id' not in obj:
-            raise ValueError("Не найден параметер 'id'")
-        if 'payload' not in obj:
-            raise ValueError("Не найден параметер 'payload'")
+    @property
+    def id(self) -> UUID:
+        return self._id
 
-        task_id = obj['id']
-        payload = obj['payload']
+    @property
+    def status(self) -> TaskStatus:
+        return self._status
 
-        if not isinstance(task_id, int):
-            raise TypeError(
-                f'Task.id должен быть int, получили {type(task_id).__name__}'
-            )
-        if not isinstance(payload, dict):
-            raise TypeError(
-                f'Task.payload должен быть dict, получили {type(payload).__name__}'
-            )
+    @status.setter
+    def status(self, value: TaskStatus | str) -> None:
+        self._status = self._normalize_status(value)
 
-        return cls(id=task_id, payload=payload)
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    @property
+    def is_ready(self) -> bool:
+        return self._status is TaskStatus.NEW
+
+    @staticmethod
+    def _normalize_id(value: str | UUID) -> UUID:
+        if isinstance(value, UUID):
+            return value
+        if isinstance(value, str):
+            try:
+                return UUID(value)
+            except ValueError as err:
+                raise TaskIdValidationError('id должно быть валидным UUID') from err
+        raise TaskIdValidationError('id должно быть строкой UUID или UUID')
+
+    @staticmethod
+    def _normalize_status(value: TaskStatus | str) -> TaskStatus:
+        if isinstance(value, TaskStatus):
+            return value
+        if isinstance(value, str):
+            try:
+                return TaskStatus(value)
+            except ValueError as err:
+                raise TaskStatusValidationError(
+                    f'status должно быть одним из: {", ".join(item.value for item in TaskStatus)}'
+                ) from err
+        raise TaskStatusValidationError('status должно быть строкой или TaskStatus')
+
+    @staticmethod
+    def _normalize_created_at(value: datetime | None) -> datetime:
+        if value is None:
+            return datetime.now(timezone.utc)
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                raise ValueError('created_at должно быть timezone-aware datetime')
+            return value
+        raise TypeError('created_at должно быть datetime или None')
