@@ -45,6 +45,13 @@ def test_setting_string_shorter_than_min_len_raises_string_validation_error() ->
         model.name = 'a'
 
 
+def test_setting_whitespace_only_string_raises_string_validation_error() -> None:
+    model = DummyModel()
+
+    with pytest.raises(StringValidationError):
+        model.name = '   '
+
+
 def test_setting_string_longer_than_max_len_raises_string_validation_error() -> None:
     model = DummyModel()
 

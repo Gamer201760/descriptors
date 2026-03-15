@@ -31,6 +31,11 @@ class String:
         if not isinstance(value, str):
             raise StringValidationError(f'{self._attr[1:]} должно быть строкой')
 
+        if not value.strip():
+            raise StringValidationError(
+                f'{self._attr[1:]} не должно быть пустым или состоять только из пробелов'
+            )
+
         if self._max_len is not None and len(value) > self._max_len:
             raise StringValidationError(
                 f'{self._attr[1:]} не должно превышать {self._max_len} символов'

@@ -1,4 +1,11 @@
+from typing import Protocol, runtime_checkable
+
 from domain.task_status import TaskStatus
+
+
+@runtime_checkable
+class SupportsStatus(Protocol):
+    status: TaskStatus
 
 
 class NonDataStatusLabel:
@@ -7,6 +14,8 @@ class NonDataStatusLabel:
     def __get__(self, obj: object | None, objtype: type | None = None) -> object:
         if obj is None:
             return self
+        if not isinstance(obj, SupportsStatus):
+            raise TypeError('Дескриптор работает только с объектами со статусом задачи')
         return f'Status: {obj.status.value}'
 
 
